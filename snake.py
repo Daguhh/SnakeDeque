@@ -122,10 +122,10 @@ class BodyPart:
 
         self.window = window
 
-        self.size = 10
+        self.size = size
         self.surface = pygame.Surface((self.size,self.size))
         self.surface.fill(color)
-        self.rect
+        self.rect = pygame.Rect(0,0,self.size,self.size)
 
 
 class Snake:
@@ -134,24 +134,37 @@ class Snake:
         self.window = window
         self.speed = 1
         self.direction = pval((0, 1))
+
+        self.thin_body = BodyPart(window)
+        self.thick_body = BodyPart(window, 15)
+
         self.length = 5
-        self.body_part_size = 10
+        self.body_parts = deque(maxlen=self.length)
+        self.body_parts.append(self.gen())
 
-        self.body_rect = deque(maxlen=self.length)
-        self.body_rect.append(pygame.Rect(0,0,10,10))
+#        self.body_part_size = 10
+#
+#        self.body_rect = deque(maxlen=self.length)
+#        self.body_rect.append(pygame.Rect(0,0,10,10))
+#
+#        self.body_part_surface = pygame.Surface(
+#            (self.body_part_size-1, self.body_part_size-1)
+#        )
 
-        self.body_part_surface = pygame.Surface(
-            (self.body_part_size-1, self.body_part_size-1)
-        )
+    def gen(self, kind='thin'):
+        if kind == 'thin':
+            return BodyPart(self.window)
+        elif kind == 'thick':
+            return BodyPart(self.window, 15)
 
     def change_direction(self, direction):
         if pmt.dot(self.direction, direction) == 0:
-            self.direction = pval(direction) * self.body_part_size
+            self.direction = pval(direction) * 10# self.body_part_size
 
     def move(self):
 
         for s in range(self.speed):
-            rect = self.body_rect[-1].copy()
+            rect = self.body_parts[-1].rect.copy()
 
             rect.x +=  self.direction[0]
             rect.y +=  self.direction[1]
@@ -161,11 +174,13 @@ class Snake:
             elif any(rect.colliderect(part) for part in self.body_rect):
                 print("You're dead")
 
-            self.body_rect.append(rect)
+            new_part = self.gen()
+            new_part.rect = rect
+            self.body_parts.append(new_part)
 
     def go_trough(self, rect):
 
-        head_rect = self.body_rect[-1]
+        head_rect = self.body_rect[-1].rect
 
         if self.direction[0] > 0:
             head_rect.x = 0
@@ -189,14 +204,14 @@ class Snake:
     def grow(self):
 
         self.length += 1
-        self.body_rect = deque(self.body_rect, maxlen=self.length)
+        self.body_parts = deque(self.body_parts, maxlen=self.length)
 
     def show(self):
 
         self.window.fill((20, 20, 20))
         pygame.draw.rect(self.window, (255, 255, 255), self.window.get_rect(), 5)
-        for rect in self.body_rect:
-            self.window.blit(self.body_part_surface, rect)
+        for part in self.body_parts:
+            self.window.blit(self.body_part_surface, part.rect)
 
 if __name__ == "__main__":
     game = MainWindow()
