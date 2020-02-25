@@ -1,0 +1,203 @@
+#!/usr/bin/python3
+
+import sys
+import random
+from collections import deque
+
+import pygame
+
+from object_position import PositionMathTool as pmt
+from object_position import PositionValueObject as pval
+
+
+# DIR_EVENT = zip((pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP),
+#                ((1,0),(-1,0),(0,1),(0,-1)))
+
+DIR_EVENT = (pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP)
+
+
+class MainWindow:
+    def __init__(self):
+
+        self.window = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption("Snake game")
+
+        self.background = pygame.Surface((800, 600))
+        self.background.fill(pygame.Color("#222222"))
+
+        self.game_surf_pos = (30, 30)
+        game_surf_size = (740, 540)
+        rect = pygame.Rect(self.game_surf_pos, game_surf_size)
+        self.game_surface = pygame.Surface(game_surf_size)
+
+        pygame.draw.rect(
+            self.game_surface, (255, 255, 255), self.game_surface.get_rect(), 5
+        )
+
+        self.snake = Snake(self.game_surface)
+        self.apple = Fruit(self.game_surface, 1)
+
+        self.clock = pygame.time.Clock()
+
+    def loop(self):
+
+        is_running = True
+        last_huge_meal = 2
+        time_before_roasted = 10*1000
+        tic = pygame.time.get_ticks()
+        toc = 0
+        while is_running:
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+
+                    if event.key in DIR_EVENT:
+                        self.change_snake_direction(event.key)
+
+            if self.snake.body_rect[-1].colliderect(self.apple.rect):
+                self.snake.eat(self.apple)
+                last_huge_meal -= 1
+                if last_huge_meal > 0 :
+                    self.apple = Fruit(self.game_surface, 1 )
+                else :
+                    tic = pygame.time.get_ticks()
+                    toc = 0
+                    last_huge_meal = 5
+                    self.apple = Fruit(self.game_surface, 20 )
+
+            if toc > time_before_roasted and self.apple.value > 1 :
+                tic = pygame.time.get_ticks()
+                self.apple = Fruit(self.game_surface, 1 )
+
+            self.snake.move()
+
+            self.window.blit(self.background, (0, 0))
+            self.window.blit(self.game_surface, self.game_surf_pos)
+            self.snake.show()
+            self.apple.show()
+
+            toc = pygame.time.get_ticks() - tic
+            self.clock.tick(15)
+            pygame.display.flip()
+
+    def change_snake_direction(self, key):
+
+        if key == pygame.K_RIGHT:
+            self.snake.change_direction((1, 0))
+
+        elif key == pygame.K_LEFT:
+            self.snake.change_direction((-1, 0))
+
+        elif key == pygame.K_DOWN:
+            self.snake.change_direction((0, 1))
+
+        elif key == pygame.K_UP:
+            self.snake.change_direction((0, -1))
+
+class Fruit:
+    def __init__(self, window, value):
+
+        self.window = window
+
+        self.value = value
+        s = 10 + 3*(value-1)
+        self.size=(s,s)
+        self.surface = pygame.Surface((self.size))
+
+        self.position = pval((random.randint(0,self.window.get_width()),
+                              random.randint(0,self.window.get_height())))
+        self.rect = self.surface.get_rect()
+        self.rect.topleft = self.position.get()
+
+        self.surface.fill((200, 0, 0))
+
+    def show(self):
+
+        self.window.blit(self.surface, self.rect)
+
+class BodyPart:
+    def __init__(self, window, size=10, color=(200,200,200)):
+
+        self.window = window
+
+        self.size = 10
+        self.surface = pygame.Surface((self.size,self.size))
+        self.surface.fill(color)
+        self.rect
+
+
+class Snake:
+    def __init__(self, window):
+
+        self.window = window
+        self.speed = 1
+        self.direction = pval((0, 1))
+        self.length = 5
+        self.body_part_size = 10
+
+        self.body_rect = deque(maxlen=self.length)
+        self.body_rect.append(pygame.Rect(0,0,10,10))
+
+        self.body_part_surface = pygame.Surface(
+            (self.body_part_size-1, self.body_part_size-1)
+        )
+
+    def change_direction(self, direction):
+        if pmt.dot(self.direction, direction) == 0:
+            self.direction = pval(direction) * self.body_part_size
+
+    def move(self):
+
+        for s in range(self.speed):
+            rect = self.body_rect[-1].copy()
+
+            rect.x +=  self.direction[0]
+            rect.y +=  self.direction[1]
+
+            if not self.window.get_rect().colliderect(rect):
+                rect = self.go_trough(rect)
+            elif any(rect.colliderect(part) for part in self.body_rect):
+                print("You're dead")
+
+            self.body_rect.append(rect)
+
+    def go_trough(self, rect):
+
+        head_rect = self.body_rect[-1]
+
+        if self.direction[0] > 0:
+            head_rect.x = 0
+
+        elif self.direction[0] < 0:
+            head_rect.x = self.window.get_width()
+
+        elif self.direction[1] > 0:
+            head_rect.y = 0
+
+        elif self.direction[1] < 0:
+            head_rect.y = self.window.get_height()
+
+        return head_rect
+
+    def eat(self, fruit):
+
+        for i in range(fruit.value) :
+            self.grow()
+
+    def grow(self):
+
+        self.length += 1
+        self.body_rect = deque(self.body_rect, maxlen=self.length)
+
+    def show(self):
+
+        self.window.fill((20, 20, 20))
+        pygame.draw.rect(self.window, (255, 255, 255), self.window.get_rect(), 5)
+        for rect in self.body_rect:
+            self.window.blit(self.body_part_surface, rect)
+
+if __name__ == "__main__":
+    game = MainWindow()
+    game.loop()
