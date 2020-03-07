@@ -39,6 +39,8 @@ class MainWindow:
 
         self.clock = pygame.time.Clock()
 
+        self.update_rect_list = []
+
     def loop(self):
 
         is_running = True
@@ -48,6 +50,7 @@ class MainWindow:
         toc = 0
         while is_running:
 
+            self.update_rect_list = [part.rect for part in self.snake.body_parts]
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
@@ -56,7 +59,7 @@ class MainWindow:
                     if event.key in DIR_EVENT:
                         self.change_snake_direction(event.key)
 
-            if self.snake.body_rect[-1].colliderect(self.apple.rect):
+            if self.snake.body_parts[-1].rect.colliderect(self.apple.rect):
                 self.snake.eat(self.apple)
                 last_huge_meal -= 1
                 if last_huge_meal > 0 :
@@ -72,6 +75,12 @@ class MainWindow:
                 self.apple = Fruit(self.game_surface, 1 )
 
             self.snake.move()
+            test = [part.rect for part in self.snake.body_parts]
+            print('------------------')
+            print(test)
+            #self.update_rect_list = set(self.update_rect_list).union([part.rect for part in self.snake.body_parts])
+            #self.update_rect_list.append(self.apple.rect)
+            #list1 + [elmt for i, elmt in enumerate(list2) if elmt not in list1+list2[:i]]
 
             self.window.blit(self.background, (0, 0))
             self.window.blit(self.game_surface, self.game_surf_pos)
@@ -81,6 +90,7 @@ class MainWindow:
             toc = pygame.time.get_ticks() - tic
             self.clock.tick(15)
             pygame.display.flip()
+            #pygame.display.update(self.update_rect_list)
 
     def change_snake_direction(self, key):
 
@@ -135,9 +145,6 @@ class Snake:
         self.speed = 1
         self.direction = pval((0, 1))
 
-        self.thin_body = BodyPart(window)
-        self.thick_body = BodyPart(window, 15)
-
         self.length = 5
         self.body_parts = deque(maxlen=self.length)
         self.body_parts.append(self.gen())
@@ -155,7 +162,7 @@ class Snake:
         if kind == 'thin':
             return BodyPart(self.window)
         elif kind == 'thick':
-            return BodyPart(self.window, 15)
+            return BodyPart(self.window, 12)
 
     def change_direction(self, direction):
         if pmt.dot(self.direction, direction) == 0:
@@ -171,7 +178,7 @@ class Snake:
 
             if not self.window.get_rect().colliderect(rect):
                 rect = self.go_trough(rect)
-            elif any(rect.colliderect(part) for part in self.body_rect):
+            elif any(rect.colliderect(part.rect) for part in self.body_parts):
                 print("You're dead")
 
             new_part = self.gen()
@@ -180,7 +187,7 @@ class Snake:
 
     def go_trough(self, rect):
 
-        head_rect = self.body_rect[-1].rect
+        head_rect = self.body_parts[-1].rect
 
         if self.direction[0] > 0:
             head_rect.x = 0
@@ -201,17 +208,22 @@ class Snake:
         for i in range(fruit.value) :
             self.grow()
 
+        new_part = self.gen('thick')
+        new_part.rect.center = self.body_parts[-1].rect.center
+        self.body_parts.append(new_part)
+
     def grow(self):
 
         self.length += 1
         self.body_parts = deque(self.body_parts, maxlen=self.length)
+
 
     def show(self):
 
         self.window.fill((20, 20, 20))
         pygame.draw.rect(self.window, (255, 255, 255), self.window.get_rect(), 5)
         for part in self.body_parts:
-            self.window.blit(self.body_part_surface, part.rect)
+            self.window.blit(part.surface, part.rect)
 
 if __name__ == "__main__":
     game = MainWindow()
