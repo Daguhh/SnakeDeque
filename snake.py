@@ -1,129 +1,14 @@
 #!/usr/bin/python3
 
-import sys
-import random
+# standard library
 from collections import deque
 
+# installed library
 import pygame
 
+# self-made modules : object to store and perform math on tuple like positions
+# value
 from object_position import PositionValueObject as pval
-
-#DIR_EVENT = (pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP)
-DIR_EVENT_DICT = {pygame.K_RIGHT : (1,0),
-                  pygame.K_LEFT : (-1,0),
-                  pygame.K_DOWN : (0,1),
-                  pygame.K_UP : (0,-1)}
-GAME_WINDOW_OFFSET = pval((30,30))
-GAME_WINDOW_SIZE = pval((800,600))
-
-
-def random_fruit():
-    P = [85,12,3]
-    fruits = [Apple, Peer, BlueBerry]
-    #choice = [p*[fruit] for p, fruit in zip(P, fruits)]
-    choice = [item for sublist in [p*[fruit] for p, fruit in zip(P, fruits)] for item in sublist]
-    return random.choice(choice)
-
-class MainWindow:
-    def __init__(self):
-
-        self.window = pygame.display.set_mode((800, 600))
-        pygame.display.set_caption("Snake game")
-
-        self.background = pygame.Surface((800, 600))
-        self.background.fill(pygame.Color("#222222"))
-
-        self.game_surf_pos = GAME_WINDOW_OFFSET.get()
-        game_surf_size = (GAME_WINDOW_SIZE - 2 * GAME_WINDOW_OFFSET).get()
-        rect = pygame.Rect(self.game_surf_pos, game_surf_size)
-        self.game_surface = pygame.Surface(game_surf_size)
-
-        pygame.draw.rect(
-            self.game_surface,
-            (255, 255, 255),
-            self.game_surface.get_rect(),
-            5
-        )
-
-        self.snake = Snake(self.game_surface)
-        self.fruits = (Apple, Peer)
-        self.fruit = Apple(self.game_surface)
-
-        self.clock = pygame.time.Clock()
-
-        self.update_rect_list = []
-
-        self.window.blit(self.background, (0, 0))
-        self.window.blit(self.game_surface, self.game_surf_pos)
-        pygame.display.flip()
-
-    def loop(self):
-
-        is_running = True
-        while is_running:
-
-            for event in pygame.event.get():
-
-                if event.type == pygame.QUIT:
-                    sys.exit()
-
-                if event.type == pygame.KEYDOWN:
-                    if event.key in DIR_EVENT_DICT.keys():
-                        self.snake.change_direction(DIR_EVENT_DICT[event.key])
-
-            if self.snake.head.rect.colliderect(self.fruit.rect):
-                self.snake.eat(self.fruit)
-                self.fruit = random_fruit()(self.game_surface)
-
-            self.snake.move()
-
-            self.update_game_window()
-
-
-    def update_game_window(self):
-
-        self.window.blit(self.background, (0, 0))
-        self.window.blit(self.game_surface, self.game_surf_pos)
-        self.snake.show()
-        self.fruit.show()
-
-        self.clock.tick(15)
-        pygame.display.flip()
-        #pygame.display.update(self.snake.body_parts)
-
-class Fruit:
-
-    def __init__(self, window, v=1, size=(8,8), color=(200,0,0)):
-
-        self.window = window
-        self.position = pval((random.randint(0,self.window.get_width()),
-                              random.randint(0,self.window.get_height())))
-
-        self.nutritive_value = v #value
-        self.size = size
-        self.color = color
-
-        self.surface = pygame.Surface((self.size))
-        self.surface.fill(self.color)
-
-        self.rect = self.surface.get_rect()
-        self.rect.topleft = self.position.get()
-
-    def show(self):
-
-        self.window.blit(self.surface, self.rect)
-
-class Apple(Fruit):
-    def __init__(self, window):
-        Fruit.__init__(self, window)
-
-class Peer(Fruit):
-    def __init__(self, window):
-        Fruit.__init__(self, window, v=3, size=(12,12), color=(0,200,0))
-
-class BlueBerry(Fruit):
-    def __init__(self, window):
-        Fruit.__init__(self, window, v=9, size=(16, 16), color=(0,0,200))
 
 class BodyPart:
     def __init__(self, size=10, color=(200,200,200)):
@@ -227,7 +112,3 @@ class Snake:
         for part in self.body_parts:
             self.window.blit(part.surface, part.rect)
 
-if __name__ == "__main__":
-    game = MainWindow()
-    game.loop()
-    #pass
