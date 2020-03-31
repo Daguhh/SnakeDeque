@@ -11,6 +11,7 @@ import pygame
 from object_position import PositionValueObject as pval
 
 class BodyPart:
+    """ body element of the snake"""
     def __init__(self, size=10, color=(200,200,200)):
 
         self.surface = pygame.Surface((size, size))
@@ -19,6 +20,7 @@ class BodyPart:
         self.rect = pygame.Rect(0,0,size,size)
 
 class Snake:
+    """ store a list on BodyPart element in a fixed sized list"""
     def __init__(self, window):
 
         self.window = window
@@ -27,13 +29,13 @@ class Snake:
         self.head_pos = pval((0,0))
 
         self.length = 5
-        self.body_parts = deque(maxlen=self.length)
+        self.body_parts = deque(maxlen=self.length) # store body parts
         for i in range(5):
             self.body_parts.append(BodyPart())
-        self.eaten_fruits = []
+        self.eaten_fruits = [] # store fruit eaten by snake until they make snake grow
 
     def change_direction(self, direction):
-        if pval.dot(self.direction, direction) == 0:
+        if pval.dot(self.direction, direction) == 0: # can't do backtracking
             self.direction = pval(direction) * 10# self.body_part_size
 
     def move(self):
@@ -44,16 +46,21 @@ class Snake:
             next_rect = self.head.rect.copy()
             next_rect.topleft = next_head_pos.get()
 
+            # if next position is outside game area
             if not self.window.get_rect().colliderect(next_rect):
                 next_rect = self.go_trough(next_rect)
                 next_head_pos = pval(next_rect.topleft)
+            # if snake bites himself
             if any(next_rect.colliderect(part.rect) for part in [b for b in self.body_parts][:-3]): #self.body_parts[:-3]):
                 print("You're dead")
-
+            # if a fruit has been eaten
             if self.eaten_fruits :
+                # if its position whe, eaten collide with the tail
                 if any(self.tail.rect.colliderect(f.rect) for f in self.eaten_fruits) :
+                    # grow and remove fruit from list
                     self.grow(self.eaten_fruits.pop(0).nutritive_value)
 
+            # create a new BodyPart object at new position
             self.head_pos = next_head_pos
             new_part = BodyPart()
             new_part.rect = next_rect
@@ -72,6 +79,7 @@ class Snake:
         return self.body_parts[0]
 
     def go_trough(self, rect):
+        """ make snake go through wall"""
 
         rect = self.head.rect
         x,y = self.direction
@@ -87,6 +95,7 @@ class Snake:
         return rect
 
     def eat(self, fruit) :
+        """ add fruit eaten to a "buffer" list and inflate bodypart """
 
         fruit.rect = self.head.rect
         self.eaten_fruits.append(fruit)
