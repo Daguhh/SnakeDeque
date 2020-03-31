@@ -72,7 +72,6 @@ class MainWindow:
                         self.snake.change_direction(DIR_EVENT_DICT[event.key])
 
             if self.snake.head.rect.colliderect(self.fruit.rect):
-                print('---- eating --------')
                 self.snake.eat(self.fruit)
                 self.fruit = random_fruit()(self.game_surface)
 
@@ -127,7 +126,7 @@ class BlueBerry(Fruit):
         Fruit.__init__(self, window, v=9, size=(16, 16), color=(0,0,200))
 
 class BodyPart:
-    def __init__(self, size=9, color=(200,200,200)):
+    def __init__(self, size=10, color=(200,200,200)):
 
         self.surface = pygame.Surface((size, size))
         self.color = color
@@ -159,20 +158,15 @@ class Snake:
             next_head_pos = self.head_pos + self.direction
             next_rect = self.head.rect.copy()
             next_rect.topleft = next_head_pos.get()
-#            import ipdb
-#            ipdb.set_trace()
-#            tail = self.body_parts[:-2]
 
             if not self.window.get_rect().colliderect(next_rect):
                 next_rect = self.go_trough(next_rect)
                 next_head_pos = pval(next_rect.topleft)
             if any(next_rect.colliderect(part.rect) for part in [b for b in self.body_parts][:-3]): #self.body_parts[:-3]):
                 print("You're dead")
-                #print([rect for rect in self.body_parts])
-                #input()
-            print(len(self.eaten_fruits))
+
             if self.eaten_fruits :
-                if self.tail.rect.colliderect(self.eaten_fruits[0].rect) :
+                if any(self.tail.rect.colliderect(f.rect) for f in self.eaten_fruits) :
                     self.grow(self.eaten_fruits.pop(0).nutritive_value)
 
             self.head_pos = next_head_pos
@@ -209,7 +203,7 @@ class Snake:
 
     def eat(self, fruit) :
 
-        print('------------ eat eat ------------------------')
+        fruit.rect = self.head.rect
         self.eaten_fruits.append(fruit)
 
         head = BodyPart()
@@ -223,10 +217,7 @@ class Snake:
 
     def grow(self, value):
 
-        print('--------------- grow -------------------')
-
         self.length += value #1
-        print(self.length)
         self.body_parts = deque(self.body_parts, maxlen=self.length)
 
     def show(self):
