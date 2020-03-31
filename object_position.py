@@ -101,9 +101,9 @@ class PositionValueObject:
         return all([x == y for x, y in zip(v1, v2)])
 
 
-class PositionMathTool:
-    def __init__(self):
-        pass
+#class PositionMathTool:
+#    def __init__(self):
+#        pass
 
     def max(*tup):
         tup = tup[0]
