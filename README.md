@@ -6,7 +6,7 @@ move and eat, that's all, that's cool
 
 ### usage :
   ```bash
-pip install -r requirement.txt
+pip3 install -r requirement.txt
 ```
 then just run it with :
   ```bash
