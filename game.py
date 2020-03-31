@@ -24,35 +24,27 @@ GAME_WINDOW_SIZE = pval((800,600))
 class MainWindow:
     def __init__(self):
 
+        # create a new window
         self.window = pygame.display.set_mode((800, 600))
+        # set game window name
         pygame.display.set_caption("Snake game")
 
+        # create a grey background
         self.background = pygame.Surface((800, 600))
         self.background.fill(pygame.Color("#222222"))
 
+        # make a surface/game area inside main window
         self.game_surf_pos = GAME_WINDOW_OFFSET.get()
         game_surf_size = (GAME_WINDOW_SIZE - 2 * GAME_WINDOW_OFFSET).get()
         rect = pygame.Rect(self.game_surf_pos, game_surf_size)
         self.game_surface = pygame.Surface(game_surf_size)
 
-        pygame.draw.rect(
-            self.game_surface,
-            (255, 255, 255),
-            self.game_surface.get_rect(),
-            5
-        )
-
+        # create the snake and store it
         self.snake = Snake(self.game_surface)
-        #self.fruits = (Apple, Peer)
+        # create a random fruit and store it
         self.fruit = random_fruit()(self.game_surface)
 
         self.clock = pygame.time.Clock()
-
-        self.update_rect_list = []
-
-        self.window.blit(self.background, (0, 0))
-        self.window.blit(self.game_surface, self.game_surf_pos)
-        pygame.display.flip()
 
     def loop(self):
 
@@ -64,16 +56,20 @@ class MainWindow:
                 if event.type == pygame.QUIT:
                     sys.exit()
 
+                # loop for arrow key event
                 if event.type == pygame.KEYDOWN:
                     if event.key in DIR_EVENT_DICT.keys():
                         self.snake.change_direction(DIR_EVENT_DICT[event.key])
 
+            # test if snake head collide with a fruit
             if self.snake.head.rect.colliderect(self.fruit.rect):
                 self.snake.eat(self.fruit)
+                # create a new fruit, old one is deleted as it's not referenced anymore
                 self.fruit = random_fruit()(self.game_surface)
 
             self.snake.move()
 
+            # update screen
             self.update_game_window()
 
 
